@@ -27,7 +27,7 @@ def plotlyUpload(table, columns, title, ylabel, limits, file_name,
     df = df.sort_index()
     df = df[use_columns]
     if secondary_y == []:
-        df.plot(x='TimeStep', legend=False)
+        df.plot(x='TimeStep', legend=False)#das muss auch noch auf traces angepasst werden
     else:
         primary_y = [i for i in use_columns if i not in secondary_y]
         data = []        
@@ -36,7 +36,11 @@ def plotlyUpload(table, columns, title, ylabel, limits, file_name,
                 x=df.index,
                 y=df[y],
                 name=y,
-                yaxis='y2'
+                yaxis='y2',
+                line = dict(
+                #color = ('rgb(22, 96, 167)'),
+                #width = 4,
+                dash = 'dash')
                 )
             data.append(trace)
         for y in primary_y:
