@@ -55,18 +55,18 @@ def plotlyUpload(table, columns, title, ylabel, limits, file_name,
 #plotlyUpload('TBRissMini031507', columns, title, ylabel, limits, file_name, 
 #             use_columns=use_columns, online=True)
 #
-#columns = ['TimeStep','v_hor_auflager','T_unten','rel_F_unten','T_int_Stoss','rel_F_int_Stoss','T_oben','rel_F_oben']
-#title = 'Verschiebung Auflager'
-#ylabel = "Auflagerverschiebung in mm"
-#file_name = 'VerschiebungAuflager'
-#limits = []
-#use_columns = ['TimeStep','v_hor_auflager']
-#plotlyUpload('TBRissMini031507', columns, title, ylabel, limits, file_name, use_columns=use_columns, online=True)
+columns = ['TimeStep','v_hor_auflager','T_unten','rel_F_unten','T_int_Stoss','rel_F_int_Stoss','T_oben','rel_F_oben']
+title = 'Verschiebung Auflager'
+ylabel = "Auflagerverschiebung in mm"
+file_name = 'VerschiebungAuflager'
+limits = []
+use_columns = ['TimeStep','v_hor_auflager']
+plotlyUpload('TBRissMini031507', columns, title, ylabel, limits, file_name, use_columns=use_columns, online=False)
 
-columns = ['TimeStep','v_hor_unten','v_ver_haus','v_ver_weg','v_hor_oben_haus','v_hor_oben_weg']
-title = 'Verschiebungen am integralen Stoss'
-ylabel = "Verschiebung in mm"
-file_name = 'verschiebungenIntegralerStoss'
-limits = [-.5,.5]
-use_columns = ['TimeStep','v_hor_unten','v_hor_oben_haus','v_hor_oben_weg','v_ver_haus','v_ver_weg']
-plotlyUpload('TBRissMini031506', columns, title, ylabel, limits, file_name, online=True)
+#columns = ['TimeStep','v_hor_unten','v_ver_haus','v_ver_weg','v_hor_oben_haus','v_hor_oben_weg']
+#title = 'Verschiebungen am integralen Stoss'
+#ylabel = "Verschiebung in mm"
+#file_name = 'verschiebungenIntegralerStoss'
+#limits = [-.5,.5]
+#use_columns = ['TimeStep','v_hor_unten','v_hor_oben_haus','v_hor_oben_weg','v_ver_haus','v_ver_weg']
+#plotlyUpload('TBRissMini031506', columns, title, ylabel, limits, file_name, online=True)
