@@ -112,6 +112,7 @@ def plotlyUpload(df, title, ylabel, limits, file_name,
 
     
 
+<<<<<<< HEAD
 #while 1:
 # Bestimme Datumswerte, um die FTP-Verzeichnisse korrekt zu ermitteln
 datum = date.today() # <- HIER KÖNNEN SIE EIN ANDERES DATUM EINSETZEN
@@ -187,4 +188,83 @@ plotlyUpload(df, title, ylabel, limits, file_name,
 
 
             
+=======
+while 1:
+    # Bestimme Datumswerte, um die FTP-Verzeichnisse korrekt zu ermitteln
+    datum = date.today() # <- HIER KÖNNEN SIE EIN ANDERES DATUM EINSETZEN
+    week = datum.isocalendar()[1]
+    datumNeu = get_week_days(datum.year, week)
+    
+    nweeks = 1
+    for i in range(0,nweeks):
+        week = datum.isocalendar()[1]
+        datumNeu = get_week_days(datum.year, week)
+        #datum = datum - timedelta(days=7)
+        
+        # ************
+        # Hole die Daten von ME-Box "mpaBruecke"
+        # Dubletten werden von sqlite automatisch ignoriert
+            
+        for SensFTP, SensDB, header in zip(sensorenFTP,sensorenDB,headerDB):    
+            folder = str(datumNeu.year) + "/" + str(datumNeu.month).zfill(2) + "/week" + str(week).zfill(2) + "/"
+            fname = SensFTP + "-week" + str(week).zfill(2) + ".txt"
+            
+            # Daten aus der Vorwoche
+            try:
+                if SensFTP == 'mpaBruecke':        
+                    strftp = "ftp://stapfg1:wipogexe@ftp.smartgage.net/" + folder + fname
+                if SensFTP == 'mpaBox2':        
+                    strftp = "ftp://stapfg:wipogexe@ftp.smartgage.net/" + folder + fname
+                else:
+                    'sensor', SensFTP, 'nicht vorhanden'
+                print strftp
+                pf1 = pd.read_csv(strftp, delimiter=";", decimal=',', 
+                    parse_dates = [0], infer_datetime_format=True, 
+                    skiprows=2, header=None, dayfirst=True,
+                    names = header)
+                pf1.index.names = ['rowid']
+                dbfile = "C:/bruecke/dmsDaten/dmsDaten.sqlite"
+                cnx = sqlite3.connect(dbfile)
+                pf1.to_sql(SensDB, cnx, flavor='sqlite', if_exists='append', index=False)
+                cnx.close()
+            except:
+                print ("Datei " + folder + fname + " auf FTP-Server "+SensFTP+" nicht vorhanden")
+                print sys.exc_info()
+
+
+    columns = ['t_haus','t_weg','e_m_haus','e_m_weg',
+               'e_q_haus','e_q_weg','e_q_oben','e_q_unten']
+    title = 'Dehnungen im Holzquerschnitt beim integralen Stoss'
+    ylabel = "Dehnung in Promille"
+    file_name = 'DehnungenHolzaktuell'
+    limits = [-.1,.1]
+    use_columns = columns
+    start_date = '2016-06-08 18:00:00'
+    faktor = [1, 1, 0.5, 0.5, 2, 2, 2, 2]
+    df = plotlyDownload('dmsHolz', columns)
+    plotlyUpload(df, title, ylabel, limits, file_name, 
+             use_columns=use_columns, start_date = start_date, 
+             faktoren=faktor, online=True, 
+                fileopt='overwrite')
+                
+    columns = ['N_u_haus','Q_u_weg','N_o_weg','Q_o_weg',
+           'N_u_weg','Q_u_haus','N_o_haus','Q_o_haus']
+    title = 'Kraft in Stangen'
+    ylabel = "Kraft in kN"
+    file_name = 'StangenKraftaktuell'
+    limits = []
+    use_columns = ['N_u_haus','N_u_weg','N_o_haus','N_o_weg',
+                   'Q_u_haus','Q_u_weg','Q_o_haus','Q_o_weg']
+    start_date = '2016-06-08 18:00:00'
+    faktor = [26.89, 26.89, 26.89, 26.89, -26.89, -26.89, 26.89, -26.89]
+    df = plotlyDownload('dmsStangen', columns)
+    plotlyUpload(df, title, ylabel, limits, file_name, 
+                 use_columns=use_columns, start_date=start_date,
+                 faktoren=faktor, online=True)
+    time.sleep(3600)
+    
+
+
+                
+>>>>>>> 9807098f9512b6009abb956586b5410ab0ae4aef
 
