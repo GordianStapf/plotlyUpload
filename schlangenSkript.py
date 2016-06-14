@@ -26,7 +26,6 @@ plotly.tools.set_credentials_file(username='AbteilungHolz',
 import plotly.plotly as py
 import plotly.graph_objs as go
 import numpy as np
-import time
 
 dbfile = "C:/bruecke/dmsDaten/dmsDaten.sqlite"
 sensorenFTP = ['mpaBruecke','mpaBox2']
@@ -47,9 +46,8 @@ def get_week_days(year, week):
     dlt = timedelta(days = (week-1)*7)
     return d + dlt #,  d + dlt + timedelta(days=6)
 
-def plotlyDownload(table, columns, filterMoist=False):
-    con = sqlite3.connect(
-        r"c:\bruecke\dmsDaten\dmsDaten.sqlite")
+def dfFromOwnDB(database, table, columns, filterMoist=False):
+    con = sqlite3.connect(database)
 
     df = pd.read_sql("SELECT * from "+table, con, parse_dates = ['date']
                         , index_col=['date'])
@@ -60,11 +58,6 @@ def plotlyDownload(table, columns, filterMoist=False):
     con.close()
     df.columns=columns
     df = df.sort_index()
-    print df.index.max()
-    print df.index.min()
-    df = df[use_columns]
-    df = df.where(df>-1000,np.nan)
-    df = df.where(df<1000,np.nan)
     return df
 
 
@@ -72,7 +65,7 @@ def plotlyDownload(table, columns, filterMoist=False):
 def plotlyUpload(df, title, ylabel, limits, file_name, 
                  use_columns=[], start_date='2015-08-30 00:00:00', 
                     filterMoist=False, faktoren=[], online=False, 
-                fileopt='overwrite'):
+                fileopt='overwrite', gl=False):
 
     data = []
     if type(start_date) == str:
@@ -82,7 +75,7 @@ def plotlyUpload(df, title, ylabel, limits, file_name,
         dfi = df[df.index>start]
         dfj = dfi -dfi.iloc[0]
         dfj = dfj[::5]        
-        trace = go.Scatter(
+        trace = go.Scattergl(
             x=dfj.index,
             y=dfj[column]*faktor,
             name=column,
@@ -112,90 +105,15 @@ def plotlyUpload(df, title, ylabel, limits, file_name,
 
     
 
-<<<<<<< HEAD
-#while 1:
-# Bestimme Datumswerte, um die FTP-Verzeichnisse korrekt zu ermitteln
-datum = date.today() # <- HIER KÖNNEN SIE EIN ANDERES DATUM EINSETZEN
-week = datum.isocalendar()[1]
-datumNeu = get_week_days(datum.year, week)
-
-nweeks = 1
-for i in range(0,nweeks):
-    week = datum.isocalendar()[1]
-    datumNeu = get_week_days(datum.year, week)
-    #datum = datum - timedelta(days=7)
-    
-    # ************
-    # Hole die Daten von ME-Box "mpaBruecke"
-    # Dubletten werden von sqlite automatisch ignoriert
-        
-    for SensFTP, SensDB, header in zip(sensorenFTP,sensorenDB,headerDB):    
-        folder = str(datumNeu.year) + "/" + str(datumNeu.month).zfill(2) + "/week" + str(week).zfill(2) + "/"
-        fname = SensFTP + "-week" + str(week).zfill(2) + ".txt"
-        
-        # Daten aus der Vorwoche
-        try:
-            if SensFTP == 'mpaBruecke':        
-                strftp = "ftp://stapfg1:wipogexe@ftp.smartgage.net/" + folder + fname
-            if SensFTP == 'mpaBox2':        
-                strftp = "ftp://stapfg:wipogexe@ftp.smartgage.net/" + folder + fname
-            else:
-                'sensor', SensFTP, 'nicht vorhanden'
-            print strftp
-            pf1 = pd.read_csv(strftp, delimiter=";", decimal=',', 
-                parse_dates = [0], infer_datetime_format=True, 
-                skiprows=2, header=None, dayfirst=True,
-                names = header)
-            pf1.index.names = ['rowid']
-            dbfile = "C:/bruecke/dmsDaten/dmsDaten.sqlite"
-            cnx = sqlite3.connect(dbfile)
-            pf1.to_sql(SensDB, cnx, flavor='sqlite', if_exists='append', index=False)
-            cnx.close()
-        except:
-            print ("Datei " + folder + fname + " auf FTP-Server "+SensFTP+" nicht vorhanden")
-            print sys.exc_info()
-
-
-columns = ['t_haus','t_weg','e_m_haus','e_m_weg',
-           'e_q_haus','e_q_weg','e_q_oben','e_q_unten']
-title = 'Dehnungen im Holzquerschnitt beim integralen Stoss'
-ylabel = "Dehnung in Promille"
-file_name = 'DehnungenHolzaktuell'
-limits = [-.1,.1]
-use_columns = columns
-start_date = '2016-06-08 18:00:00'
-faktor = [1, 1, 0.5, 0.5, 2, 2, 2, 2]
-df = plotlyDownload('dmsHolz', columns)
-plotlyUpload(df, title, ylabel, limits, file_name, 
-         use_columns=use_columns, start_date = start_date, 
-         faktoren=faktor, online=True, 
-            fileopt='overwrite')
-            
-columns = ['N_u_haus','Q_u_weg','N_o_weg','Q_o_weg',
-       'N_u_weg','Q_u_haus','N_o_haus','Q_o_haus']
-title = 'Kraft in Stangen'
-ylabel = "Kraft in kN"
-file_name = 'StangenKraftaktuell'
-limits = [-5.,5.]
-use_columns = ['N_u_haus','N_u_weg','N_o_haus','N_o_weg',
-               'Q_u_haus','Q_u_weg','Q_o_haus','Q_o_weg']
-start_date = '2016-06-08 18:00:00'
-faktor = [26.89, 26.89, 26.89, 26.89, -26.89, -26.89, 26.89, -26.89]
-df = plotlyDownload('dmsStangen', columns)
-plotlyUpload(df, title, ylabel, limits, file_name, 
-             use_columns=use_columns, start_date=start_date,
-             faktoren=faktor, online=True)
-
-
-            
-=======
-while 1:
+def dbFromFTP(nweeks=1):
+    """loads data from smartgage to local Database
+    nweeks -- number of weeks that should be checked on the FTP server
+    """
     # Bestimme Datumswerte, um die FTP-Verzeichnisse korrekt zu ermitteln
     datum = date.today() # <- HIER KÖNNEN SIE EIN ANDERES DATUM EINSETZEN
     week = datum.isocalendar()[1]
     datumNeu = get_week_days(datum.year, week)
     
-    nweeks = 1
     for i in range(0,nweeks):
         week = datum.isocalendar()[1]
         datumNeu = get_week_days(datum.year, week)
@@ -231,40 +149,37 @@ while 1:
                 print ("Datei " + folder + fname + " auf FTP-Server "+SensFTP+" nicht vorhanden")
                 print sys.exc_info()
 
-
+if __name__ == '__main__':    
+    dbFromFTP()
+    
     columns = ['t_haus','t_weg','e_m_haus','e_m_weg',
                'e_q_haus','e_q_weg','e_q_oben','e_q_unten']
     title = 'Dehnungen im Holzquerschnitt beim integralen Stoss'
     ylabel = "Dehnung in Promille"
     file_name = 'DehnungenHolzaktuell'
-    limits = [-.1,.1]
+    limits = [-.3,.3]
     use_columns = columns
     start_date = '2016-06-08 18:00:00'
     faktor = [1, 1, 0.5, 0.5, 2, 2, 2, 2]
-    df = plotlyDownload('dmsHolz', columns)
+    df = dfFromOwnDB(r"c:\bruecke\dmsDaten\dmsDaten.sqlite", 'dmsHolz', columns)
     plotlyUpload(df, title, ylabel, limits, file_name, 
              use_columns=use_columns, start_date = start_date, 
              faktoren=faktor, online=True, 
-                fileopt='overwrite')
+                fileopt='overwrite', gl=True)
                 
     columns = ['N_u_haus','Q_u_weg','N_o_weg','Q_o_weg',
            'N_u_weg','Q_u_haus','N_o_haus','Q_o_haus']
     title = 'Kraft in Stangen'
     ylabel = "Kraft in kN"
     file_name = 'StangenKraftaktuell'
-    limits = []
+    limits = [-5.,5.]
     use_columns = ['N_u_haus','N_u_weg','N_o_haus','N_o_weg',
                    'Q_u_haus','Q_u_weg','Q_o_haus','Q_o_weg']
     start_date = '2016-06-08 18:00:00'
     faktor = [26.89, 26.89, 26.89, 26.89, -26.89, -26.89, 26.89, -26.89]
-    df = plotlyDownload('dmsStangen', columns)
+    df = dfFromOwnDB('dmsStangen', columns)
+    df = df.where(df>-1000,np.nan)
+    df = df.where(df<1000,np.nan)
     plotlyUpload(df, title, ylabel, limits, file_name, 
                  use_columns=use_columns, start_date=start_date,
-                 faktoren=faktor, online=True)
-    time.sleep(3600)
-    
-
-
-                
->>>>>>> 9807098f9512b6009abb956586b5410ab0ae4aef
-
+                 faktoren=faktor, online=True, gl=True)

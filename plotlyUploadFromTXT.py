@@ -11,23 +11,30 @@ plotly.tools.set_credentials_file(username='AbteilungHolz',
 import plotly.plotly as py
 import plotly.graph_objs as go
 import pandas as pd
+import sqlite3
+from schlangenSkript import dfFromOwnDB
+from plotlyUploadFromMultibleTables import plotlyUpload
+
+
+def dbFromCSV(dbfile, table, columns):
+    df = pd.read_csv(table, na_values='error', sep='|',skiprows=[1,2],
+                     parse_dates=[[0,1]], #index_col=[0], 
+                     dayfirst=True)
+    df.columns=columns
+    cnx = sqlite3.connect(dbfile)
+    df.to_sql('TDScounts', cnx, flavor='sqlite', if_exists='append', index=False)
+    cnx.close()
 
 def plotlyUploadCSV(table, columns, title, ylabel, limits, file_name,
                  use_columns, secondary_y=[], start_date=[],
                     filterMoist=False, online=False):
-    df = pd.read_csv(table, na_values='error', sep='|',skiprows=[1,2],
-                     parse_dates=[[0,1]], index_col=[0], dayfirst=True)
-    print df[:1]
-    df.columns=columns
     df = df.sort_index()
     df = df[use_columns]
     df = df[0:-1:100]
     data = []
-    print secondary_y
     if secondary_y == []:
         #for column, start in zip(use_columns, start_date):
         for column in use_columns:
-            #print column, start
             dfi = df#[df.index>start]
             trace = go.Scatter(
                 x=dfi.index,
@@ -101,12 +108,19 @@ def plotlyUploadCSV(table, columns, title, ylabel, limits, file_name,
         py.plot(fig, filename=file_name, fileopt='overwrite')
 
 
-columns = [str(i) for i in range(1,12)]
-title = 'TDS-Sensoren'
-ylabel = "counts"
-file_name = 'TDSdaten'
-limits = [6000,10000]
-secondary_y = []
-
-plotlyUploadCSV('m:/Abteilung/_Mitarbeiter/Stapf/TDS/logDateiTDS.txt', columns, title, ylabel, limits, file_name,
-             use_columns=columns, secondary_y=secondary_y, online=True)
+if __name__ == '__main__':
+    columns = ['sensor'+str(i) for i in range(1,12)]
+    csvFile = r'm:/Abteilung/_Mitarbeiter/Stapf/TDS/logDateiTDS.txt'
+    dbfile = r'm:/Abteilung/_Mitarbeiter/Stapf/TDS/logTDS.sqlite'
+    dbFromCSV(dbfile, csvFile, ['date']+columns)
+    table = 'TDScounts'
+    df = dfFromOwnDB(dbfile, table, columns)
+    df = df[0:-1:100]
+    title = 'TDS-Sensoren'
+    ylabel = "counts"
+    file_name = 'TDSdaten'
+    limits = [8500,9500]
+    secondary_y = []
+    plotlyUpload(df, title, ylabel, limits, file_name, 
+                 use_columns=columns, secondary_y=[], start_date='2015-08-30 00:00:00', 
+                    filterMoist=False, online=True, gl=True)
