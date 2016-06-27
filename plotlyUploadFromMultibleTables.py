@@ -41,7 +41,8 @@ def dfFromForSens(table, columns, filterMoist=False):
 
 def plotlyUpload(df, title, ylabel, limits, file_name, 
                  use_columns=[], secondary_y=[], start_date='2015-08-30 00:00:00', 
-                    filterMoist=False, online=False, gl=False):
+                    filterMoist=False, online=False, gl=False, 
+                    auto_open=False):
     df = df[use_columns]
     data = []
     if gl==False:
@@ -117,7 +118,14 @@ def plotlyUpload(df, title, ylabel, limits, file_name,
     if online==False:
         plotly.offline.plot(fig, filename=file_name)
     if online==True:    
-        py.plot(fig, filename=file_name, fileopt='overwrite')
+        py.plot(fig, filename=file_name, fileopt='overwrite',
+                auto_open=auto_open)
+def holzfeuchteAusWiderstand(widerstand, abstand_elektroden=3.):
+    from numpy import log
+    spezifischer_widerstand = widerstand / abstand_elektroden
+    holzfeuchte = (13.25 - log(spezifischer_widerstand))/0.32
+    return holzfeuchte
+
 
 if __name__ == '__main__':    
     online=True        
@@ -141,25 +149,29 @@ if __name__ == '__main__':
                  use_columns=use_columns, start_date=start_date, 
                  filterMoist=False, online=online)
     
-    columns = ['u_oben_3cm','u_oben_6cm','u_oben_1cm',
-    'u_intStoss_20cm','u_intStoss_10cm','u_intStoss_30cm',
-    'u_hirn_int_stoss','u_linearerSensor']
-    title = 'Holzfeuchten am Logger beim integralen Stoss'
-    ylabel = "Holzfeuchte in %"
-    file_name = 'HolzfeuchtenIntStoss'
-    limits = [0,20]
-    use_columns =  ['u_oben_1cm','u_oben_3cm','u_oben_6cm',
-    'u_intStoss_10cm','u_intStoss_20cm','u_intStoss_30cm',
-    'u_hirn_int_stoss', 'u_linearerSensor']
-    start_date = ['2016-06-01 15:00:00','2016-06-01 15:00:00','2016-06-01 15:00:00',
-                  '2016-06-01 15:00:00','2016-06-01 15:00:00','2016-06-01 15:00:00',
-                  '2016-06-01 15:00:00','2016-06-01 15:00:00']
-    #secondary_y = ['T_unten','T_int_Stoss','T_oben']
-    tables = ['TBC00'+str(i).zfill(2) for i in range(9,17)]
-    df = dfFromForSens(tables, columns)
-    plotlyUpload(df, title, ylabel, limits, file_name, #intStoss,id=3
-                 use_columns=use_columns, online=online, 
-                 filterMoist=False, start_date=start_date)
+#    columns = ['u_oben_3cm','u_oben_6cm','u_oben_1cm',
+#    'u_intStoss_20cm','u_intStoss_10cm','u_intStoss_30cm',
+#    'u_hirn_int_stoss','u_linearerSensor']
+#    columns = ['T_oben','T_stangen','u_intStoss_hirn','u_oben_1cm',
+#    'u_oben_6cm','u_oben_3cm','u_linearerSensor',
+#    'u_intStoss_20cm','u_intStoss_10cm','u_intStoss_30cm']
+#    title = 'Holzfeuchten am Logger beim integralen Stoss'
+#    ylabel = "Holzfeuchte in %"
+#    file_name = 'HolzfeuchtenIntStoss'
+#    limits = [0,20]
+#    use_columns =  ['u_oben_1cm','u_oben_3cm','u_oben_6cm',
+#    'u_intStoss_10cm','u_intStoss_20cm','u_intStoss_30cm',
+#    'u_hirn_int_stoss', 'u_linearerSensor']
+#    start_date = ['2016-06-01 15:00:00','2016-06-01 15:00:00','2016-06-01 15:00:00',
+#                  '2016-06-01 15:00:00','2016-06-01 15:00:00','2016-06-01 15:00:00',
+#                  '2016-06-01 15:00:00','2016-06-01 15:00:00']
+#    #secondary_y = ['T_unten','T_int_Stoss','T_oben']
+#    tables = ['TBC00'+str(i).zfill(2) for i in range(9,17)]
+#    table = 'TBTU145296'
+#    df = dfFromForSens(tables, columns)
+#    plotlyUpload(df, title, ylabel, limits, file_name, #intStoss,id=3
+#                 use_columns=use_columns, online=online, 
+#                 filterMoist=False, start_date=start_date)
     
     columns = ['v_hor_unten','v_ver_haus','v_ver_weg','v_hor_oben_haus','v_hor_oben_weg']
     title = 'Verschiebungen am integralen Stoss'
