@@ -60,8 +60,6 @@ def dfFromOwnDB(database, table, columns, filterMoist=False):
     df = df.sort_index()
     return df
 
-
-
 def plotlyUpload(df, title, ylabel, limits, file_name, 
                  use_columns=[], start_date='2015-08-30 00:00:00', 
                     filterMoist=False, faktoren=[], online=False, 
