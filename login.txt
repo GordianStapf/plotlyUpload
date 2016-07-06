@@ -1,4 +1,0 @@
-url = 'EXCHANGE.mpa.loc'
-port = 25
-user = 'brueckemoni'
-password = 'Start123'
