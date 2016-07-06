@@ -27,7 +27,7 @@ import plotly.plotly as py
 import plotly.graph_objs as go
 import numpy as np
 
-dbfile = "C:/bruecke/dmsDaten/dmsDaten.sqlite"
+dbfile = "M:\Abteilung\_Projekte\Forschung\Stuttgarter_Bruecke_Monitoring\DMS\dmsDaten.sqlite"
 sensorenFTP = ['mpaBruecke','mpaBox2']
 sensorenDB = ['dmsStangen','dmsHolz']
 headerDB =[["date", 'N_u_haus','Q_u_weg','N_o_weg','Q_o_weg',
@@ -133,24 +133,27 @@ def dbFromFTP(nweeks=1):
                     strftp = "ftp://stapfg:wipogexe@ftp.smartgage.net/" + folder + fname
                 else:
                     'sensor', SensFTP, 'nicht vorhanden'
-                print strftp
+                print(strftp)
                 pf1 = pd.read_csv(strftp, delimiter=";", decimal=',', 
                     parse_dates = [0], infer_datetime_format=True, 
                     skiprows=2, header=None, dayfirst=True,
                     names = header)
                 pf1.index.names = ['rowid']
-                dbfile = "C:/bruecke/dmsDaten/dmsDaten.sqlite"
                 cnx = sqlite3.connect(dbfile)
                 pf1.to_sql(SensDB, cnx, flavor='sqlite', if_exists='append', index=False)
+                cur = cnx.cursor()
+                sqlStr = "delete from "+SensDB+" where rowid not in (select min(rowid) from "+SensDB+" group by date)"
+                cur.execute(sqlStr)
+                cnx.commit()
                 cnx.close()
             except:
-                print ("Datei " + folder + fname + " auf FTP-Server "+SensFTP+" nicht vorhanden")
-                print sys.exc_info()
+                print("Datei " + folder + fname + " auf FTP-Server "+SensFTP+" nicht vorhanden")
+                print(sys.exc_info())
 
 if __name__ == '__main__':    
     dbFromFTP()
     
-    print 'beginne plot Stangen'
+    print('beginne plot Stangen')
     columns = ['t_haus','t_weg','e_m_haus','e_m_weg',
                'e_q_haus','e_q_weg','e_q_oben','e_q_unten']
     title = 'Dehnungen im Holzquerschnitt beim integralen Stoss'
@@ -160,15 +163,15 @@ if __name__ == '__main__':
     use_columns = columns
     start_date = '2016-06-08 18:00:00'
     faktor = [1, 1, 0.5, 0.5, 2, 2, 2, 2]
-    df = dfFromOwnDB(r"c:\bruecke\dmsDaten\dmsDaten.sqlite", 'dmsHolz', columns)
+    df = dfFromOwnDB(dbfile, 'dmsHolz', columns)
     df = df[::3]
     plotlyUpload(df, title, ylabel, limits, file_name, 
              use_columns=use_columns, start_date = start_date, 
              faktoren=faktor, online=True, 
                 fileopt='overwrite', gl=True)
-    print 'Stangen fertig'
+    print('Stangen fertig')
 
-    print 'beginne plot Dehnungen'
+    print('beginne plot Dehnungen')
                 
     columns = ['N_u_haus','Q_u_weg','N_o_weg','Q_o_weg',
            'N_u_weg','Q_u_haus','N_o_haus','Q_o_haus']
@@ -180,11 +183,11 @@ if __name__ == '__main__':
                    'Q_u_haus','Q_u_weg','Q_o_haus','Q_o_weg']
     start_date = '2016-06-08 18:00:00'
     faktor = [-26.89, 26.89, 26.89, 26.89, 26.89, -26.89, 26.89, -26.89]
-    df = dfFromOwnDB(r"c:\bruecke\dmsDaten\dmsDaten.sqlite", 'dmsStangen', columns)
+    df = dfFromOwnDB(dbfile, 'dmsStangen', columns)
     df = df.where(df>-1000,np.nan)
     df = df.where(df<1000,np.nan)
     df = df[::3]
     plotlyUpload(df, title, ylabel, limits, file_name, 
                  use_columns=use_columns, start_date=start_date,
                  faktoren=faktor, online=True, gl=True)
-    print 'Dehnungen fertig'
+    print('Dehnungen fertig')

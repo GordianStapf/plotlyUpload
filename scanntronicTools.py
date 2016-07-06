@@ -11,6 +11,7 @@ import io
 import pandas as pd
 import sqlite3
 import re
+import interpFeuchteFi as feuchte
 
 #def convertDisplacements(array):
         
@@ -37,6 +38,8 @@ sensorDict = {
      '11':'u_unten_intStoss_30cm'}}
 }
 
+dbfile = r'M:\Abteilung\_Projekte\Forschung\Stuttgarter_Bruecke_Monitoring\scanntronic\scanntronicDaten.sqlite'
+
 def connectToExchange(url='EXCHANGE.mpa.loc', user = 'brueckemoni', 
                       password = 'Start123'):
     conn = imaplib.IMAP4_SSL(url)
@@ -50,7 +53,6 @@ def getMessageID_list(conn):
     msg_id_list = msg_ids.split()
     return msg_id_list
     
-global msg
 def getMailAttachment(connection, mailID, AttachmentNr):
     """AttachmentNr starting with 1
     """
@@ -83,23 +85,24 @@ def calcDisplacement(value, zeroPoint, calValue):
     
 def initTables(dict):
     for key in dict.keys():
-        df = pd.DataFrame(columns=dict[key]['sensors'].values())
+        columns = dict[key]['sensors'].values()
+        df = pd.DataFrame(columns=columns)
+        dtypeDict = {'timestamp':'TEXT'}
+        for column in columns:
+            dtypeDict[column] = 'REAL'
         table = dict[key]['name']
-        dbfile = r'M:\Abteilung\_Mitarbeiter\Stapf\bruecke\scanntronicDaten.sqlite'
         cnx = sqlite3.connect(dbfile)
         df.to_sql(table, cnx, flavor='sqlite', if_exists='append', 
-              index=True, index_label='timestamp')
+              index=True, index_label='timestamp', dtype=dtypeDict)
         cnx.close()
     
 def getDataFrameFromAttachment(attachment):
     filecontent = attachment.get_payload(decode=True)
     #print(type(filecontent))
     filecontent = filecontent.replace(b'=\r\n',b'')
-    print(filecontent[-100:])
     filecontent_list = filecontent.splitlines()
     logger = filecontent_list[3].strip()
     date_in_header = filecontent_list[5]
-    print(logger)
     if len(filecontent_list[-1]) == 0:
         filecontent_list.pop()
     #print(filecontent_list[-2:][-100:])
@@ -110,6 +113,7 @@ def getDataFrameFromAttachment(attachment):
     data = data.replace(b'+',b',')
     data = data.replace(b';,',b';')
     data = data.replace(b';',b'\n')
+    data = data.replace(b'-000',b'nan')
     if b'!' in data:
         normal_line = re.findall(b'\n([^!]*?)\n',data)[0]
         nan_line = re.sub(b'-?\d+',b'nan',normal_line)
@@ -123,7 +127,7 @@ def getDataFrameFromAttachment(attachment):
         frequency = filecontent_list[9].replace(b'm',b'Min')
         channels = filecontent_list[11].split(b' ')
         zeroPoint = int(filecontent_list[17]) + int(filecontent_list[19])*256
-        calLen = int(filecontent_list[15]) + int(filecontent_list[17])*256
+        calLen = int(filecontent_list[21]) + int(filecontent_list[23])*256
         calLow = int(filecontent_list[25]) + int(filecontent_list[27])*256
         calHigh = int(filecontent_list[29]) + int(filecontent_list[31])*256
         calValue = float(calLen) / ( calHigh - calLow)
@@ -131,40 +135,56 @@ def getDataFrameFromAttachment(attachment):
     if filecontent_list[1] == b'38':
         frequency = filecontent_list[7].replace(b'm',b'Min')
         channels = filecontent_list[9].split(b' ')
-    channels = channels[1:-1]
-    df_raw = pd.read_csv(dataIO, sep=',', names=channels)
+    channelsHeader = channels[1:-1]
+    firstline = re.findall(b'\n(.*?)\n', data)[0]
+    numberChannelsData = firstline.count(b',') + 1
+    channelsDict = list(sensorDict['Rissfox Mini RissMini031507']['sensors'].keys())
+    channelsDict.sort()
+    if len(channelsHeader) == numberChannelsData:
+        channels = [i.decode() for i in channelsHeader]
+    elif len(channelsDict) == numberChannelsData:
+        channels = channelsDict
+    else:
+        raise ValueError('Anzahl der Kanaele in den Daten ('+
+                        str(numberChannelsData)+
+                        ') stimmt weder mit der Anzahl der Kanaele im Header ('
+                        +str(len(channelsHeader))+
+                        ') noch mit der Anzahl der tatsaechlichen Kanaele ('+
+                        str(len(channelsDict))+') ueberein')        
+    dtypeDict = {}
+    for channel in channels:
+        dtypeDict[channel] = float
+    df_raw = pd.read_table(dataIO, sep=',', names=channels, dtype=dtypeDict)
+#    if len(df_raw.columns) == len()
     pdLastDate = pd.to_datetime(lastDate.decode(), dayfirst=True)
     timestamp = pd.date_range(end=pdLastDate, periods=len(df_raw), 
                           freq = frequency.decode())
-    df_raw.index = timestamp    
     dataIO.close()
     df = pd.DataFrame()
     for column in df_raw.columns:
-        value = sensorDict[logger.decode()]['sensors'][column.decode()]
-        if value[1] == 'v':
-            df[value] = [x+4095 if x < 0 else x for x in df_raw[column]]
-            df[value] = (df[value] - zeroPoint) * calValue
-        else:
-            df[value] = df_raw[column]/10.                               
+        value = sensorDict[logger.decode()]['sensors'][column]
+        
+        if value[0] == 'v':
+            if (value == 'v_hor_unten') or (value == 'v_hor_auflager'):
+                df[value] = [x+4096 if x < 0 else x for x in df_raw[column]]
+                df[value] = [(x-zeroPoint)*calValue for x in df[value]]
+            else:
+                df[value] = [x*0.0026366*2 for x in df_raw[column]]
 
-#            try:
-#                df[value] = df_raw[column]/10.                               
-#            except:
-#                print('spalte', value, column, 'fehler')
-#                for wert in df_raw[column]:
-#                    try:
-#                        int(wert)
-#                    except:
-#                        print('-'+wert+'-')
-#    df['timestamp'] = timestamp    
+        else:
+            df[value] = [x/10. for x in df_raw[column]] #normale Zuweisung funktioniert nicht zuverlaessig                              
+    df.index = timestamp
     return df, logger
 
-def dfToScanntronicDB(df, table, dbInput):
-    dbfile = r'M:\Abteilung\_Mitarbeiter\Stapf\bruecke\scanntronicDaten.sqlite'
+def dfToScanntronicDB(df, table):
     cnx = sqlite3.connect(dbfile)
     df.to_sql(table, cnx, flavor='sqlite', if_exists='append', 
               index=True, index_label='timestamp')
 #    index=False)
+    cnx.close()
+    
+def updateEmailList(dbInput):
+    cnx = sqlite3.connect(dbfile)
     cur = cnx.cursor()
     attachment, name, date, subject, emailID, logger = dbInput
     print(dbInput)
@@ -174,7 +194,6 @@ def dfToScanntronicDB(df, table, dbInput):
     cnx.close()
 
 def dropDuplicates(table):
-    dbfile = r'M:\Abteilung\_Mitarbeiter\Stapf\bruecke\scanntronicDaten.sqlite'
     cnx = sqlite3.connect(dbfile)
     cur = cnx.cursor()
     sqlStr = "delete from "+table+" where rowid not in (select min(rowid) from "+table+" group by timestamp)"
@@ -184,7 +203,6 @@ def dropDuplicates(table):
 
 
 def resetDB():
-    dbfile = r'M:\Abteilung\_Mitarbeiter\Stapf\bruecke\scanntronicDaten.sqlite'
     cnx = sqlite3.connect(dbfile)
     cur = cnx.cursor()
     for key in sensorDict.keys():
@@ -200,14 +218,13 @@ def updateDB():
     conn = connectToExchange()
     msg_id_list = getMessageID_list(conn)
     msg_id_list.reverse()
-    dbfile = r'M:\Abteilung\_Mitarbeiter\Stapf\bruecke\scanntronicDaten.sqlite'
     cnx = sqlite3.connect(dbfile)
     sqlStr = "SELECT emailID FROM checkedAttachments"
     already_checked = pd.read_sql(sqlStr, cnx)
     existingMails = already_checked.emailID.values    
     cnx.close()
    
-    for emailID in msg_id_list:
+    for emailID in msg_id_list[:10]:
         if int(emailID) not in existingMails:
             for attachmentNr in [1, 2]:
                 output = getMailAttachment(conn, emailID, attachmentNr)
@@ -220,14 +237,40 @@ def updateDB():
                     print(table)
                     #df.to_json(r'm:\abteilung\_mitarbeiter\stapf\bruecke\test.json')
                     dbInput = output + (emailID, logger)                
-                    dfToScanntronicDB(df, table, dbInput)
+                    dfToScanntronicDB(df, table)
+                    updateEmailList(dbInput)
                     dropDuplicates(table)
                 else:
                     print('No attachment in email ')
         else:
             print('Email Nr '+emailID.decode()+' wurde schon eingelesen')
+            
+def dfFromScanntronicDB(table):
+    cnx = sqlite3.connect(dbfile)
+    df = pd.read_sql("SELECT * from "+table, cnx, parse_dates = ['timestamp']
+                        , index_col=['timestamp'], coerce_float=True)
+    cnx.close()
+    df.sort_index()
+    return df
+    
+def R2u_intStoss(df_R = dfFromScanntronicDB('HygrofoxIntegralerStoss')):
+    df_u = df_R.copy()
+    for column in df_u.columns:
+        if column[0] == 'u':
+            df_u[column] = df_R[column].map(feuchte.widerstand2Feuchte_Fi)
+        else: 
+            df_u[column] = df_R[column]
+    dfToScanntronicDB(df_u, 'HygrofoxIntegralerStoss_u')
+    dropDuplicates('HygrofoxIntegralerStoss_u')
+    return df_u
+
+def zoomData():
+    SELECT * FROM HygrofoxMitte WHERE (timestamp >'2016-07-01') and (timestamp <'2016-07-02') 
+
 
 if __name__ == '__main__':
     #resetDB()    
     #initTables(sensorDict)    
     updateDB()
+    R2u_intStoss()
+    pass

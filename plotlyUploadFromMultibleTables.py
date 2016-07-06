@@ -13,6 +13,7 @@ import plotly.graph_objs as go
 import pandas as pd
 import sqlite3
 import numpy as np
+import scanntronicTools as sT
 
 def dfFromForSens(table, columns, filterMoist=False):
     con = sqlite3.connect(
@@ -120,6 +121,7 @@ def plotlyUpload(df, title, ylabel, limits, file_name,
     if online==True:    
         py.plot(fig, filename=file_name, fileopt='overwrite',
                 auto_open=auto_open)
+                
 def holzfeuchteAusWiderstand(widerstand, abstand_elektroden=3.):
     from numpy import log
     spezifischer_widerstand = widerstand / abstand_elektroden
@@ -128,7 +130,11 @@ def holzfeuchteAusWiderstand(widerstand, abstand_elektroden=3.):
 
 
 if __name__ == '__main__':    
-    online=True        
+    sT.updateDB()
+    sT.R2u_intStoss()
+
+    online = True    
+    auto_open = False    
             
     columns = ['T_surf_oben','T_surf_unten',
     'u_seite_1cm','u_seite_6cm','u_seite_3cm',
@@ -137,41 +143,41 @@ if __name__ == '__main__':
     ylabel = "Holzfeuchte in %"
     file_name = 'HolzfeuchtenMitte'
     limits = [0,20]
-    use_columns =  ['u_seite_1cm','u_seite_3cm','u_seite_6cm',
+    use_columns =  ['u_haus_1cm','u_haus_3cm','u_haus_6cm',
     'u_unten_1cm','u_unten_3cm','u_unten_6cm','u_unten_10cm','u_unten_20cm']
     #secondary_y = ['T_unten','T_int_Stoss','T_oben']
-    start_date = ['2016-05-30 20:30:00','2016-05-30 20:30:00','2016-05-30 20:30:00',
-                  '2016-01-01 15:00:00','2016-01-01 15:00:00','2016-01-01 15:00:00',
-                  '2016-01-01 15:00:00','2016-01-01 15:00:00']
-    table = 'TBTU145295'
-    df = dfFromForSens(table, columns)
+    start_date = ['2016-05-31 15:00:00', '2016-05-31 15:00:00', '2016-05-31 15:00:00', 
+                  '2016-03-23 15:00:00', '2016-03-23 15:00:00', '2016-03-23 15:00:00', 
+                  '2016-03-23 15:00:00', '2016-03-23 15:00:00', '2016-03-23 15:00:00']
+    table = 'HygrofoxMitte'
+    df = sT.dfFromScanntronicDB(table)
+    df = df.where(df>3,np.nan)
     plotlyUpload(df, title, ylabel, limits, file_name, #mitte,id=1
                  use_columns=use_columns, start_date=start_date, 
-                 filterMoist=False, online=online)
+                 filterMoist=False, online=online, auto_open=auto_open)
     
-#    columns = ['u_oben_3cm','u_oben_6cm','u_oben_1cm',
-#    'u_intStoss_20cm','u_intStoss_10cm','u_intStoss_30cm',
-#    'u_hirn_int_stoss','u_linearerSensor']
-#    columns = ['T_oben','T_stangen','u_intStoss_hirn','u_oben_1cm',
-#    'u_oben_6cm','u_oben_3cm','u_linearerSensor',
-#    'u_intStoss_20cm','u_intStoss_10cm','u_intStoss_30cm']
-#    title = 'Holzfeuchten am Logger beim integralen Stoss'
-#    ylabel = "Holzfeuchte in %"
-#    file_name = 'HolzfeuchtenIntStoss'
-#    limits = [0,20]
-#    use_columns =  ['u_oben_1cm','u_oben_3cm','u_oben_6cm',
-#    'u_intStoss_10cm','u_intStoss_20cm','u_intStoss_30cm',
-#    'u_hirn_int_stoss', 'u_linearerSensor']
-#    start_date = ['2016-06-01 15:00:00','2016-06-01 15:00:00','2016-06-01 15:00:00',
-#                  '2016-06-01 15:00:00','2016-06-01 15:00:00','2016-06-01 15:00:00',
-#                  '2016-06-01 15:00:00','2016-06-01 15:00:00']
-#    #secondary_y = ['T_unten','T_int_Stoss','T_oben']
-#    tables = ['TBC00'+str(i).zfill(2) for i in range(9,17)]
-#    table = 'TBTU145296'
-#    df = dfFromForSens(tables, columns)
-#    plotlyUpload(df, title, ylabel, limits, file_name, #intStoss,id=3
-#                 use_columns=use_columns, online=online, 
-#                 filterMoist=False, start_date=start_date)
+    columns = ['u_oben_3cm','u_oben_6cm','u_oben_1cm',
+    'u_intStoss_20cm','u_intStoss_10cm','u_intStoss_30cm',
+    'u_hirn_int_stoss','u_linearerSensor']
+    columns = ['T_oben','T_stangen','u_intStoss_hirn','u_oben_1cm',
+    'u_oben_6cm','u_oben_3cm','u_linearerSensor',
+    'u_intStoss_20cm','u_intStoss_10cm','u_intStoss_30cm']
+    title = 'Holzfeuchten am Logger beim integralen Stoss'
+    ylabel = "Holzfeuchte in %"
+    file_name = 'HolzfeuchtenIntStoss'
+    limits = [0,20]
+    use_columns =  ['u_oben_intStoss_1cm','u_oben_intStoss_3cm','u_oben_intStoss_6cm',
+    'u_unten_intStoss_10cm','u_unten_intStoss_20cm','u_unten_intStoss_30cm',
+    'u_intStoss_stirn', 'u_linear']
+    start_date = ['2016-06-01 15:00:00','2016-06-01 15:00:00','2016-06-01 15:00:00',
+                  '2016-06-01 15:00:00','2016-06-01 15:00:00','2016-06-01 15:00:00',
+                  '2016-06-01 15:00:00','2016-06-01 15:00:00']
+    #secondary_y = ['T_unten','T_int_Stoss','T_oben']
+    table = 'HygrofoxIntegralerStoss_u'
+    df = sT.dfFromScanntronicDB(table)
+    plotlyUpload(df, title, ylabel, limits, file_name, #intStoss,id=3
+                 use_columns=use_columns, online=online, 
+                 filterMoist=False, start_date=start_date)
     
     columns = ['v_hor_unten','v_ver_haus','v_ver_weg','v_hor_oben_haus','v_hor_oben_weg']
     title = 'Verschiebungen am integralen Stoss'
@@ -179,23 +185,25 @@ if __name__ == '__main__':
     file_name = 'verschiebungenIntegralerStoss'
     limits = [-.5,.5]
     use_columns = ['v_hor_unten','v_hor_oben_haus','v_hor_oben_weg','v_ver_haus','v_ver_weg']
-    start_date = ['2016-05-09 15:00:00','2016-06-03 10:30:00','2016-06-03 10:30:00',
-                  '2016-01-01 15:00:00','2016-01-01 15:00:00']
-    table = 'TBRissMini031506'              
-    df = dfFromForSens(table, columns)
+    start_date = '2016-03-30 15:00:00'
+    table = 'RissFoxIntegralerStoss'              
+    df = sT.dfFromScanntronicDB(table)
+    df.sort_index()
     plotlyUpload(df, title, ylabel, limits, file_name, 
-                 use_columns=use_columns, secondary_y=[], start_date=start_date, online=online)
+                 use_columns=use_columns, secondary_y=[], 
+                    start_date=start_date, online=online, auto_open=auto_open)
     
     columns = ['v_hor_auflager','T_unten','rel_F_unten','T_int_Stoss','rel_F_int_Stoss','T_oben','rel_F_oben']
     title = 'Klimadaten'
     ylabel = "relative Feuche in %"
     file_name = 'Klimadaten'
     limits = []
-    use_columns = ['T_unten','T_int_Stoss','T_oben',
-                   'rel_F_unten','rel_F_int_Stoss','rel_F_oben']
-    secondary_y = ['T_unten','T_int_Stoss','T_oben']
-    table = 'TBRissMini031507'
-    df = dfFromForSens(table, columns)
+    use_columns = ['t_unten_mitte','t_intStoss_oben','t_oben_mitte',
+                   'rF_unten_mitte','rF_intStoss_oben','rF_oben_mitte']
+    secondary_y = ['t_unten_mitte','t_intStoss_oben','t_oben_mitte']
+    table = 'RissFoxMitte'
+    df = sT.dfFromScanntronicDB(table)
+    df = df.where(df>3,np.nan)
     plotlyUpload(df, title, ylabel, limits, file_name, 
                  use_columns=use_columns, secondary_y=secondary_y, online=online)
     
@@ -206,8 +214,8 @@ if __name__ == '__main__':
     file_name = 'VerschiebungAuflager'
     limits = []
     use_columns = ['v_hor_auflager']
-    table = 'TBRissMini031507'
-    df = dfFromForSens(table, columns)
+    table = 'RissFoxMitte'
+    df = sT.dfFromScanntronicDB(table)
     plotlyUpload(df, title, ylabel, limits, file_name, 
                  use_columns=use_columns, start_date='2016-03-30 00:00:00',
                  online=online)
