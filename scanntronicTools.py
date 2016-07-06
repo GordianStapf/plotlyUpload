@@ -40,8 +40,10 @@ sensorDict = {
 
 dbfile = r'M:\Abteilung\_Projekte\Forschung\Stuttgarter_Bruecke_Monitoring\scanntronic\scanntronicDaten.sqlite'
 
-def connectToExchange(url='EXCHANGE.mpa.loc', user = 'brueckemoni', 
-                      password = 'Start123'):
+def connectToExchange():
+    loginDatei = open('./login.txt','r')
+    exec(loginDatei.read())
+    loginDatei.close()
     conn = imaplib.IMAP4_SSL(url)
     conn.login(user, password)
     conn.select('INBOX')
@@ -264,8 +266,8 @@ def R2u_intStoss(df_R = dfFromScanntronicDB('HygrofoxIntegralerStoss')):
     dropDuplicates('HygrofoxIntegralerStoss_u')
     return df_u
 
-def zoomData():
-    SELECT * FROM HygrofoxMitte WHERE (timestamp >'2016-07-01') and (timestamp <'2016-07-02') 
+#def zoomData():
+#    SELECT * FROM HygrofoxMitte WHERE (timestamp >'2016-07-01') and (timestamp <'2016-07-02') 
 
 
 if __name__ == '__main__':

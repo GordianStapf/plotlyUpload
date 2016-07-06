@@ -164,7 +164,7 @@ if __name__ == '__main__':
     start_date = '2016-06-08 18:00:00'
     faktor = [1, 1, 0.5, 0.5, 2, 2, 2, 2]
     df = dfFromOwnDB(dbfile, 'dmsHolz', columns)
-    df = df[::3]
+    #df = df[::3]
     plotlyUpload(df, title, ylabel, limits, file_name, 
              use_columns=use_columns, start_date = start_date, 
              faktoren=faktor, online=True, 
