@@ -152,6 +152,7 @@ def dbFromFTP(nweeks=1):
                 print(sys.exc_info())
 
 if __name__ == '__main__':    
+    mailString = 'Skript wurde erfolgreich ausgeführt\n'
     dbFromFTP()
     
     print('beginne plot Stangen')
@@ -164,8 +165,10 @@ if __name__ == '__main__':
     use_columns = columns
     start_date = '2016-06-08 18:00:00'
     faktor = [1, 1, 0.5, 0.5, 2, 2, 2, 2]
+    mailString += 'dmsHolz\n'
     df = dfFromOwnDB(dbfile, 'dmsHolz', columns)
     #df = df[::3]
+    mailString += str(df.loc[df.index.max()])+'\n\n'
     plotlyUpload(df, title, ylabel, limits, file_name, 
              use_columns=use_columns, start_date = start_date, 
              faktoren=faktor, online=True, 
@@ -187,10 +190,11 @@ if __name__ == '__main__':
     df = dfFromOwnDB(dbfile, 'dmsStangen', columns)
     df = df.where(df>-1000,np.nan)
     df = df.where(df<1000,np.nan)
-    df = df[::3]
+    mailString += 'dmsHolz\n'
+    mailString += str(df.loc[df.index.max()])+'\n'
     plotlyUpload(df, title, ylabel, limits, file_name, 
                  use_columns=use_columns, start_date=start_date,
                  faktoren=faktor, online=True, gl=True)
     print('Dehnungen fertig')
-    sendWarningMail(text='Skript wurde erfolgreich ausgeführt', 
+    sendWarningMail(text=mailString, 
                     subject = 'Dehnungen wurden aktualisiert')

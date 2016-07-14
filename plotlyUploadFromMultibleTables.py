@@ -130,7 +130,8 @@ def holzfeuchteAusWiderstand(widerstand, abstand_elektroden=3.):
     return holzfeuchte
 
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
+    mailString = 'Skript wurde erfolgreich ausgeführt'
     sT.updateDB()
     sT.R2u_intStoss()
 
@@ -156,6 +157,9 @@ if __name__ == '__main__':
     plotlyUpload(df, title, ylabel, limits, file_name, #mitte,id=1
                  use_columns=use_columns, start_date=start_date, 
                  filterMoist=False, online=online, auto_open=auto_open)
+    mailString += table+'\n'
+    mailString += str(df.loc[df.index.max()])+'\n\n'
+
     
     columns = ['u_oben_3cm','u_oben_6cm','u_oben_1cm',
     'u_intStoss_20cm','u_intStoss_10cm','u_intStoss_30cm',
@@ -179,6 +183,8 @@ if __name__ == '__main__':
     plotlyUpload(df, title, ylabel, limits, file_name, #intStoss,id=3
                  use_columns=use_columns, online=online, 
                  filterMoist=False, start_date=start_date)
+    mailString += table+'\n'
+    mailString += str(df.loc[df.index.max()])+'\n\n'
     
     columns = ['v_hor_unten','v_ver_haus','v_ver_weg','v_hor_oben_haus','v_hor_oben_weg']
     title = 'Verschiebungen am integralen Stoss'
@@ -193,6 +199,8 @@ if __name__ == '__main__':
     plotlyUpload(df, title, ylabel, limits, file_name, 
                  use_columns=use_columns, secondary_y=[], 
                     start_date=start_date, online=online, auto_open=auto_open)
+    mailString += table+'\n'
+    mailString += str(df.loc[df.index.max()])+'\n\n'
     
     columns = ['v_hor_auflager','T_unten','rel_F_unten','T_int_Stoss','rel_F_int_Stoss','T_oben','rel_F_oben']
     title = 'Klimadaten'
@@ -207,6 +215,8 @@ if __name__ == '__main__':
     df = df.where(df>3,np.nan)
     plotlyUpload(df, title, ylabel, limits, file_name, 
                  use_columns=use_columns, secondary_y=secondary_y, online=online)
+    mailString += table+'\n'
+    mailString += str(df.loc[df.index.max()])+'\n\n'
     
     columns = ['v_hor_auflager','T_unten','rel_F_unten','T_int_Stoss',
     'rel_F_int_Stoss','T_oben','rel_F_oben']
@@ -220,6 +230,8 @@ if __name__ == '__main__':
     plotlyUpload(df, title, ylabel, limits, file_name, 
                  use_columns=use_columns, start_date='2016-03-30 00:00:00',
                  online=online)
+    mailString += table+'\n'
+    mailString += str(df.loc[df.index.max()])+'\n\n'
     
-    sendWarningMail(text='Skript wurde erfolgreich ausgeführt', 
+    sendWarningMail(text=mailString, 
                     subject = 'ScanntronicDaten wurden aktualisiert')

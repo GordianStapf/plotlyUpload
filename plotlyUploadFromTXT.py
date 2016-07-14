@@ -44,8 +44,11 @@ if __name__ == '__main__':
     file_name = 'TDSdaten'
     limits = [8500,9500]
     secondary_y = []
+    mailString = 'Skript wurde erfolgreich ausgeführt'
+    mailString += str(df.loc[df.index.max()])+'\n'
+
     plotlyUpload(df, title, ylabel, limits, file_name, 
                  use_columns=columns, secondary_y=[], start_date='2015-08-30 00:00:00', 
                     filterMoist=False, online=True, gl=True)
-    sendWarningMail(text='Skript wurde erfolgreich ausgeführt', 
+    sendWarningMail(text=mailString, 
                 subject = 'TDS-Daten wurden aktualisiert')
