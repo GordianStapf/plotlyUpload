@@ -41,9 +41,7 @@ sensorDict = {
 dbfile = r'M:\Abteilung\_Projekte\Forschung\Stuttgarter_Bruecke_Monitoring\scanntronic\scanntronicDaten.sqlite'
 
 def connectToExchange():
-    loginDatei = open('./login.txt','r')
-    exec(loginDatei.read())
-    loginDatei.close()
+    from login import url, user, password
     conn = imaplib.IMAP4_SSL(url)
     conn.login(user, password)
     conn.select('INBOX')

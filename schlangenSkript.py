@@ -26,6 +26,7 @@ plotly.tools.set_credentials_file(username='AbteilungHolz',
 import plotly.plotly as py
 import plotly.graph_objs as go
 import numpy as np
+from warningMail import sendWarningMail
 
 dbfile = "M:\Abteilung\_Projekte\Forschung\Stuttgarter_Bruecke_Monitoring\DMS\dmsDaten.sqlite"
 sensorenFTP = ['mpaBruecke','mpaBox2']
@@ -191,3 +192,5 @@ if __name__ == '__main__':
                  use_columns=use_columns, start_date=start_date,
                  faktoren=faktor, online=True, gl=True)
     print('Dehnungen fertig')
+    sendWarningMail(text='Skript wurde erfolgreich ausgeführt', 
+                    subject = 'Dehnungen wurden aktualisiert')

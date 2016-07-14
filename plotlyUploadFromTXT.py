@@ -14,6 +14,7 @@ import pandas as pd
 import sqlite3
 from schlangenSkript import dfFromOwnDB
 from plotlyUploadFromMultibleTables import plotlyUpload
+from warningMail import sendWarningMail
 
 
 def dbFromCSV(dbfile, table, columns):
@@ -46,3 +47,5 @@ if __name__ == '__main__':
     plotlyUpload(df, title, ylabel, limits, file_name, 
                  use_columns=columns, secondary_y=[], start_date='2015-08-30 00:00:00', 
                     filterMoist=False, online=True, gl=True)
+    sendWarningMail(text='Skript wurde erfolgreich ausgeführt', 
+                subject = 'TDS-Daten wurden aktualisiert')
